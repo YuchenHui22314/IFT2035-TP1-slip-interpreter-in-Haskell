@@ -1,0 +1,382 @@
+\documentclass{article}
+
+\usepackage[utf8x]{inputenc}
+\usepackage[OT1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+
+\title{IFT2035 Rapport du TP1}
+\author{Yuchen Hui, Yuyang Xiong}
+
+\newcommand\kw[1]{\textbf{#1}}
+\newcommand \Base [2] {\texttt{#1}$_{#2}$}
+\newcommand \Hex [1] {\Base{#1}{16}}
+
+\hyphenation{nom-bre sor-tie}
+
+\begin{document}
+
+\maketitle
+
+
+\section{Remerciment}
+Sans aide de la part du professeur et des démonstrateurs, nous n'arriverions jamais à compléter le travail. Veuillez accepter
+notre Remerciment par coeur!
+\section{Compréhension générale}
+Suite à la distribution de l'énoncé et du code de Cadeux, nous avons commencé 
+la lecture et la compréhension plus tôt que possible. Notre expérience:
+
+
+
+\noindent
+
+\begin{enumerate}
+\item 
+Nous avons déterminé nos travaux après la lecture de données : Cela cosiste à
+implémenter un interpréteur d'un langage Slip de la famille Lisp, dont la syntax
+est très similaire à la dernière. La première partie d'un interpréteur, soit l'analyse
+lexicale et Syntaxique, a été implantée par le professeur. La sortie de cette analyse 
+est une expression sous forme de la structure de donnée Sexp telle que définie dans le code slip.hs.
+La fonction 'readSexp' a synthétisé les deux analyses : Application de la fonction readSexp à
+une expression du langage Slip retournera une expression Sexp qui décrit l'arbre syntaxique
+de l'expression en entrée. Au fur et à mesure, nous avons réalisé que
+la connaissance exacte de la syntax de Slip est la base de nos travaux.
+
+\item L'étape suivante : compréhension de la syntax. En lisant la grammaire BNF-like, dans la 
+partie 'Survol', nous avons trouvé une erreur : La teminale 'b' est senseé être 
+$$b ::= ((tag\ x_1\ x_2\ ...\ x_n)\ e)$$ 
+plutôt que 
+$$b ::= ((tag\ x_1\ x_2)\ e).$$ 
+Une autre remarque importante a été faite plusieurs jours après, quand nous participions à la
+vidéoconférence de Maxim : Le filtrage s'applique uniquement aux structures générées par (cons ..).
+\item 
+La surprise est survenue lorsque nous analysons le sucre syntaxique des appels de fonctions.
+Les appels de fonctions, dans Slip, est organisés différement que dans Haskell :
+L'argument sera passé par être placé devant la fonction, soit $$(argument\ fonction).$$
+Et le sucre syntaxique lui-même est assez étonnant:
+$$(e_0\ e_1\ e_2\ ...\ e_n) \Longleftrightarrow (..((e_0\ e_1)\ e_2)\ ... \ e_n)$$
+L'argument $e_0$ est propagé de gauche à droit, de la même manière qu'un produit qui traverse
+la pipeline industrielle. C'est de l'ordre inverse que dans haskell!
+\item La compréhension de la fonction s2l. Le nom s2l implique Sexp to Lexp. Lexp est
+une représentation intermédiaire de l'expression à interpréter. Ce que la fonction s2l fait,
+c'est de transformer l'arbre syntaxique en Lexp, qui ne contient pas les sucres syntaxiques. 
+Par conséquent, nous devrions aussi éliminer les sucres syntaxiques par s2l.
+
+\item La compréhension de la fonction eval. Eval, est une fonction prennant deux environnement
+(Statique, dynamique) et un Lexp en argument, qui retourne une 'Value'. Cette phase sert à évaluer
+la représentation intermédiaire Lexp et la réduire en 'Value'. Value est une structures de données qui
+permet trois formes de résultat de l'évaluation : un Int, une List et une Fonction. 
+
+\end{enumerate}
+
+\section{Implémentation de la fonction s2l}
+L'analyse des expression Sexp est critique pour l'implémentation de s2l. Nous avons
+adopté la méthodologie d'analyser la structure en Sexp particulière de chaque
+type de Slip syntax puis les traiter séparément. Chaque type de Syntax corresponde à
+une branche de notre fonction s2l définie en utilisant le filtrage. Donc le premier pas
+sera de parfaire nos connaissances de Sexp. Voici des Obstacles que nous avons rencontré et finalement
+surmonté : 
+\begin{enumerate}
+  \item Appel de fonctions. Cette partie de s2l nous semble la plus simple. Cependant, nous n'avons
+  aucune idée en termes des façons systématiques d'extraire informations stockées sous forme de Sexp. Au tout début,
+  nous pensions que, puisque Sexp représente l'arbre syntaxique d'une expression, alors on pourrait 
+  le parcourir tout comme parcourir une structure de donnée arbre. Malheureusement Nous sommes bloqués 
+  dedans pour plusieurs heures (Peut-être à cause du fait que jusqu'à date le Cour IFT2015 n'a pas encore
+  couvert les matières sur le parcours des arbres). Alors, nous avons changé d'aspect de voir le problème.
+  Comme l'indiqué dans l'énoncé (ainsi que la vidéo du professeur), Sexp n'est rien qu'une liste simplement 
+  chainée. À partir de cette opinion, nous avons compris les Sexp. Auparavant ce qu'on a considérés comme
+  des sousarbres deviennent les sous-liste. Ensuite, inspirés par la fonction foldl pour les liste de haskell,
+  nous avons implémenté la fonction 's2l\_foldl', qui prend en argument une autre fonction auxiliaire 'pipeline'
+  . Puisque la fonction 's2l\_foldl' est d'ordre supérieur, il sera trop abstrait de décrire en mot. Je vous
+  invite donc à lire le code si vous voulez en savoir plus. 
+  %%Maintenant, tout est clair : nous devrions d'abord
+  %%extraire les duex premiers élément dans la liste (par exemple, $a\ et\ b\ dans\ (a\ b\ c\ \dots)$),appeler 
+  %%b à a, qui génère une Lexp k = (Lpipe a b). Ensuite, chaque fois que l'on extrait l'élément suivant 
+  %%(on le dénote par s), on ne fait que prendre k et s et sortir (Lpipe k s). Cette procédure est un peu comme
+  %%ce que la fonction foldl fait. Inspirés par foldl, nous avons implémenté la fonction s2l\_foldl qui prend 
+  %%la fonction 'pipeline' comme un argument et qui parcourt
+  %%une liste et applique 'pipeline' aux chaque élément extrait et au réultat retourné par 'pipeline' la dernière itération
+  %%(ici récursivité c'est juste comme une boucle) puis appelle récursivement elle même avec résultat retourné par 'pipeline'. 
+  %%Par exemple, prend s (élément extrait nouvellement) et k (résultat retourné)
+  %%et retourne (Lpipe k s). Puisque foldl est une fonction d'ordre supérieur, il est trop abstrait de décrire par mot, 
+  %%nous vous invitons donc à lire le code
+  %pour en savoir plus.
+  
+  \item Constructeur. Avec la fonction 's2l\_foldl', on a 
+  qu'à implémenter une fonction auxiliaire 'consConcate' similaire à 'pipeline'
+  et appeler 's2l\_foldl' passant en argument 'consConcate'.
+  
+  
+  \item Case. Case utilise aussi le concept de foldl, cependant
+  elle est plus complexe. Nous avons modifié 's2l\_foldl' pour
+  obtenir la nouvelle fonction 's2l\_foldl\_case'. De la même manière,
+  nous avons implémenté des fonctiosn auxiliaires pour case. 
+
+  
+  \item Dlet,slet,lambda. Par l'analogie, nous avons trouvé que ces trois branches utilisent le concept de foldr.
+  Lambda est la plus simple, un peu comme le rôle que joue l'appel
+  des fonctions pour le concept de foldl, donc nous avons implémenté
+  's2l\_foldr' pour expression lambda et puis la version adaptée aux slet
+  et dlet : 's2l\_foldr\_let'. Aussi, nous avous créé queleques fonctions auxilières.
+
+  
+  \item Nous avons remarqué
+que la syntax d'un appel de fonction et celle d'une déclaration de varible partage la même forme,
+toutefois cela ne causera pas de problème, car les déclarations exsitent seulement dans la branche
+pour $(case\ e\ b_1\ ... \ b_n)$ et tout autre ocurrences seront conséquemment considérées comme
+un appel de fonction.
+
+\end{enumerate}
+
+\section{Implémentation de la fonction eval}
+Avec les expériences des devoirs 1-3, nous sommes tous familiers avec
+ce que signifie eval. La partie la plus difficile sera la compréhension des comprtements de
+slet et dlet, ainsi que l'évaluation des 'Lfn'.
+\subsection{Problème avec le concept de la portée}
+Normalement, le concept 'portée' sera utilisé pour décrire une propriété d'un 
+langage de programmation. La définition des deux portée dans le livre 'Programming Language Design
+Concepts' :
+
+   "A language is statically scoped if the body of a procedure is executed in the environnement of the procedure's definition."
+
+   "A language is dynamically scoped if the body of a procedure is executed in the environnement of the procedure call."
+
+ Cependant, dans l'énoncé du TP, On dit 
+'une variale utilise la portée statiques(dynamique).' Cette expression nous
+semble plutôt mélangante : On ne parle plus d'évaluation des fonctions mais d'évaluation des variables!
+Heureusement, quand nous posons nos questions, le démonstrateur Maxim nous a tracé la lighe
+et nous a guidé vers une compréhension correcte : \\
+\\
+les varibale dans une fonction, si elle est déclarée 
+statiquement, nous le cherchons alors dans l'environnement où la fonction a été crée; si elle
+est déclarée dynamiquement, Nous le cherchons dans l'environnement où la fonction
+est appelée!\\
+\\
+Après deux jours, nous avons comfirmé notre stipulation, en voyant une réponse rédigée par 
+Monsieur Monnier dans le forum de discussion qui nous guide aussi vers cette compréhension! 
+
+\subsection{Choix à faire}
+    Lorsque l'on était en train de coder la branche de la fonction eval qui évalue le "Lvar Var", on était bloqué par un problème -- 
+    puisqu'on avait deux environnements(l'un est statique et l'autre dynamique), dans quel environnement 
+    devait-on chercher le "Var"? On a posé cette question à l'auxiliaire Maxim Bernard pendant la vidéoconférence 
+    ayant lieu ce lundi, il croyait qu'on pourrait chercher d'abord dans l'environnement statique puis dans
+    l'environnement dynamique. On s'est rappeleé que le prof avait dit, dans la vidéo promenade, qu'il existait 
+    plusieurs possibles et que c'était à nous de prendre la décision pour choisir l'environnement, dans lequel 
+    on cherche une variable. Finalement, On a décidé de respecter la suggestion de Maxim -- chercher d'abord dans 
+    l'environnement statique puis l'environnement dynamique. Nous allons expliqué la raison par
+    un exemple ici : \\
+    eval env0 [] (s2l (readSexp"(dlet (((curried+ x1) (slet ((x 9)) (lambda (y) (y (x +)))))(x 7))(6 (5 curried+)))"))
+    ;$\leadsto$ 15.\\
+    Dans cette expression, on remarque que le corps de la fonction curried+ sera (slet ((x 9)) (lambda (y) (y (x +)))),
+    où x est déclarée statiquement. En conséquence, quand on veut évaluer le corps, la valeur
+    de x devrait être cherchée dans l'environnement où curried+ est définie, dans laquelle x vaut 9. Donc le résultat d'évaluation
+    est supposé d'être 15 selon notre compréhension de slet et dlet discutée dans la section 4.1.
+    Si on décide de chercher d'abord dans l'environnement statique, l'interpréteur trouve bien que
+    x = 9, qui est compatible avec notre compréhension; Par contre, si on cherche premièrement dans l'environnement dynamique,
+    l'interpréteur assignera à variable x la valeur 7 trouvée dans l'environnement d'appel. Ce résultat n'est pas
+    raisonnable car il est en conflit avec le fait que x est déclarée statiquement. \\
+    En conclusion: il vaut mieux de chercher d'abord dans l'environnement statique.
+
+\subsection{Évaluation de Lfn}
+ Sur ce qui concerne l'évaluation de Lfn (Par exemple (Lfn "x" (Evar "x"))), Nous ne savions aussi pas trop comment transférer 'x' en Value, 
+ vu qu'il n'y a pas de place pour des string dans la structure de donnée Value. Encore une fois, Maxim nous a donné un indice. 
+ Avec l'indice, on implémente rapidement le reste du TP1.
+
+\subsection{Autre}
+Les autres parties sont similaires aux devoirs 1-3, donc nous n'avons pas rencontré
+d'empêchements.
+\section{Conclusion}
+Grace à ce TP, nous comprenons mieux les concepts des langages de programmaiton
+vus en cours en écrivant une partie d'un interpéteur de Slip. Cela nous a pris 5 jours (et un jour pour le rapport et les tests). 
+Ce sont 5 jours occupés mais aussi 5 jours remplis de surprise. Merci à tout le monde!
+
+
+
+    
+
+    %% \subsection{Allocation des blocs}
+
+%% \begin{enumerate}
+%% \item Expliquer comment fonctionne chacune des 4 méthodes d'allocation
+%%   suivantes: blocs contigus, blocs chaînés, blocs indexés, \emph{extents}.
+%% \item Contraster les avantages et inconvénients de chacune de ces méthodes.
+%% \end{enumerate}
+
+%% \subsection{Systèmes de fichiers}
+
+%% Soit un système de fichiers de style ``Unix'' tel que le FFS de BSD ou ext2
+%% de Linux, avec des blocs indexés.
+
+%% \begin{enumerate}
+%% \item Lister tous les blocs qu'il faut modifier sur le disque lors de
+%%   l'exécution de la fonction \texttt{open} qui crée un fichier (de taille
+%%   zéro).
+%% \item Spécifier l'ordre dans lequel ces opérations devraient être exécutées
+%%   pour minimiser l'impact potentiel d'un crash à mi-course.
+%% \item Sur la base de l'ordre précédent, indiquer après chaque opération
+%%   quels problèmes apparaîtraient en cas de crash à ce moment.
+%% %% \item Si le système de fichier est modifié pour garder un \emph{journal},
+%% %%   indiquer quelles données devraient être écrites dans le journal pour
+%% %%   l'opération précédente.
+%% %% \item Estimer le coût en performance d'un tel journal pour cette opération;
+%% %%   i.e. indiquer de combien de pourcents l'opération serait-elle ralentie.
+%% \end{enumerate}
+
+
+
+%% \subsection{Mount multiples (11.2)}
+
+%% \noindent
+%% Quels problèmes peuvent apparaître quand on autorise un système de fichiers
+%% à être \emph{monté} à plusieurs endroits en même temps.
+
+%% \subsection{VFS (11.8)}
+
+%% \noindent
+%% Discuter de l'usage d'une abstraction nommée \emph{VFS} pour permettre à un
+%% système d'exploitation d'utiliser facilement plusieurs sortes de systèmes de
+%% fichiers.
+
+%% \subsection{Blocs libres (11.11)}
+
+%% \noindent
+%% Soit un système où l'espace libre est maintenu dans une liste chaînée de
+%% blocs libres.
+%% \begin{enumerate}
+%% \item Supposons que le pointeur sur le premier bloc libre est perdu.
+%%   Le système peut-il reconstruire la liste des blocs libres?
+%% %% \item Suggérer un système qui s'assure le pointer sur le premier bloc libre
+%% %%   ne peut jamais être perdu à cause d'
+%% \end{enumerate}
+
+%% \subsection{Optimisation et pannes (11.13)}
+
+%% \noindent
+%% Discuter comment les optimisations de performance pour les systèmes de
+%% fichiers peuvent introduire des problèmes de cohérence en cas de panne.
+
+%% \subsection{Indexage indirect progressif (11.15)}
+
+%% \noindent
+%% Soit un système de fichiers de type ``Unix File System'' avec des blocs de
+%% 8KB, où un pointeur sur un bloc occupe 4 bytes, et où chaque inode contient
+%% 12 pointeurs sur des blocs directs, 1 pointeur sur un bloc indirect,
+%% 1 pointeur sur un bloc doublement indirect, et 1 pointeur sur un bloc
+%% triplement indirect.
+
+%% \begin{itemize}
+%% \item Quelle est la taille maximum d'un fichier?
+%% \item Combien d'accès disques sont nécessaires (en présumant que le cache
+%%   est vide) pour accéder au contenu d'un petit fichier dans \texttt{/a/b/c}?
+%% \end{itemize}
+
+
+%% \subsection*{11.17}
+
+%% \noindent
+%% Comparer l'usage d'un \emph{RAM disque} par rapport à l'usage de la même
+%% mémoire comme un cache.
+
+%% \subsection*{16.4}
+
+%% \noindent
+%% Discuter les avantages et inconvénients de cacher localement les traductions
+%% de noms pour les ordinateurs dans les domaines distants.
+
+%% \subsection*{16.16}
+
+%% Discuter les avantages et inconvénients d'utiliser pour les routeurs d'un
+%% réseau du matériel dédié plutôt que des ordinateurs standards.
+
+%% \subsection*{16.17}
+
+%% Comparer l'usage de tables statiques pour les noms d'hôtes
+%% (\texttt{/etc/hosts}) et l'usage de serveurs de noms.  Discuter comment
+%% chacun de ces deux systèmes peut-être ajusté ou augmenté pour bénéficier (au
+%% moins en partie) des avantages de l'autre.
+
+%% \subsection*{16.18}
+
+%% Les serveurs de noms sont organisé de manière hiérarchique, pourquoi?
+
+%% \subsection*{16.19}
+
+%% Soit un réseau physique similaire à Ethernet, mais qui retransmet les
+%% paquets immédiatement après la détection d'une collision.  Quels problèmes
+%% pourraient surgir avec une telle stratégie?  Comment peut-on les rectifier?
+
+%% \subsection*{16.23}
+
+%% Le protocole HTTP original était construit au-dessus de TCP/IP.
+%% Pour obtenir une page, le client établi une connection avec le serveur, lui
+%% envoie le nom de la page désirée, puis le serveur répond en envoyant la page
+%% demandée et en fermant la connection.
+
+%% \begin{itemize}
+%% \item Quels problèmes de performance cela pose-t-il?
+%% \item Est-ce que UDP serait une bonne alternative?  Pourquoi?
+%% \item Quels autres changements peut-on apporter pour améliorer la
+%%   performance de HTTP?
+%% \end{itemize}
+
+%% \subsection*{16.x}
+
+%% \noindent
+%% Sachant qu'un paquet TCP sur un réseau Ethernet peut transporter un maximum
+%% de 1460 bytes de données:
+%% \begin{itemize}
+%% \item Combien de paquets faut-il (dans le meilleur des cas) pour télécharger
+%%   un fichier de 10KB d'un serveur web?
+%% \end{itemize}
+
+%% \subsection*{16.y}
+
+%% \noindent
+%% Combien de paquets faut-il au minimum lorsqu'une machine dont les caches sont
+%% vides veut obtenir une page d'un site web tel que \texttt{www.gnu.org}?
+
+%% \subsection*{16.z}
+
+%% \noindent
+%% Soit une implantation de TCP qui gère sa fenètre comme suit: la fenêtre
+%% initiale est de 2 paquets et elle augmente de 1 pour chaque paquet dont la
+%% réception est confirmée, jusqu'à qu'un paquet soit perdu.  Elle divise alors
+%% sa fenètre par 2, puis recommence à l'agrandir mais en l'agrandissant non
+%% pas de 1 paquet mais de $1 / \textsl{fenêtre}$ paquet pour chaque paquet
+%% dont la réception est confirmée, jusqu'à ce qu'un paquet soit perdu.
+
+%% Soit une connection avec un RTT (aller-retour) de $200ms$, une bande
+%% passante de $10Mb/s$, des paquets de $1460B$, et en présumant que les
+%% routeurs font leur travail de manière parfaite (pas de buffering superflu).
+
+%% \begin{itemize}
+%% \item Quelle est la taille de la fenêtre idéale?
+%% \item Combien de temps faut-il
+%%   pour arriver au premier paquet perdu qui termine la première phase?
+%% \item Combien de temps jusqu'au premier paquet perdu qui termine la
+%%   deuxième phase?
+%% \item Combien de temps aurait été suffisant pour transférer la même quantité
+%%   de données si la fenètre avait pu être choisie de manière parfaite dès le
+%%   départ au lieu d'utiliser cet algorithme?
+%% \item Que se passe-t-il si un routeur a un buffer de 1MB?
+%% \end{itemize}
+
+%% \subsection{Réseau IP}
+
+%% \begin{enumerate}
+%% \item Décrire les fonctions que doit appeler un processus qui tourne sur la
+%%   machine \texttt{frontal.iro.umontreal.ca} pour se connecter au serveur web
+%%   de \texttt{www.iro.umontreal.ca}, tous deux connectés au même réseaux
+%%   local \emph{ethernet}.
+%% \item Décrire quels paquets de quels protocoles sont envoyés et reçus pour
+%%   pouvoir établir la connexion précédente.
+%% \item Décrire les différences si ce même processus se connecte
+%%   à \texttt{www.gnu.org}.
+%% \item Estimer le temps nécessaire pour transférer un petite page web entre
+%%   ces deux machines, sur la base d'une latence de 1ms sur le réseau local et
+%%   50ms entre les deux machines.
+%% \end{enumerate}
+
+
+\end{document}
