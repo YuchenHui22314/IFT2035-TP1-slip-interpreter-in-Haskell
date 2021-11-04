@@ -1,6 +1,7 @@
--- TP-2  --- Implantation d'une sorte de Lisp          -*- coding: utf-8 -*-
+-- TP-1  --- Implantation d'une sorte de Lisp          -*- coding: utf-8 -*-
 {-# OPTIONS_GHC -Wall #-}
-{--auteur : Stefan Monnier
+{--auteur : Stefan Monnier(professeur aggrege a l<universit/ de montr/al)
+ - date : 3/11/2021
 --------------------------------------------------------------------------
 --------------------------------------------------------------------------
 -- contributeur : Yuchen Hui,                                        ----- 
@@ -141,6 +142,7 @@ pSexps = do pSpaces
 
 -- Déclare que notre analyseur syntaxique peut-être utilisé pour la fonction
 -- générique "read".
+-- Yuchen's best friend is Liu Tianchang and Zhang Buze,
 instance Read Sexp where
     readsPrec _p s = case parse pSexp "" s of
                       Left _ -> []
@@ -493,6 +495,7 @@ eval _ _ e = error ("Can't eval: " ++ show e)
 -- Toplevel                                                              --
 ---------------------------------------------------------------------------
 
+--Stefan Monnier shishijieshangzuikuaidenanren
 evalSexp :: Sexp -> Value
 evalSexp = eval env0 [] . s2l
 
