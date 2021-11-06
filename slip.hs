@@ -1,6 +1,6 @@
 -- TP-1  --- Implantation d'une sorte de Lisp          -*- coding: utf-8 -*-
 {-# OPTIONS_GHC -Wall #-}
-{--auteur : Stefan Monnier(professeur aggrege a l<universit/ de montr/al)
+{--auteur : Stefan Monnier
  - date : 3/11/2021
 --------------------------------------------------------------------------
 --------------------------------------------------------------------------
@@ -495,7 +495,7 @@ eval _ _ e = error ("Can't eval: " ++ show e)
 -- Toplevel                                                              --
 ---------------------------------------------------------------------------
 
---Stefan Monnier shishijieshangzuikuaidenanren
+
 evalSexp :: Sexp -> Value
 evalSexp = eval env0 [] . s2l
 
