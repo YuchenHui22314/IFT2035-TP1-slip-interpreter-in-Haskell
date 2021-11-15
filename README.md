@@ -4,3 +4,5 @@
 
 
 This is my course **ift2035 concepts of programming languages** project1 at university of montreal. Content : write in haskell a interpreter for a language `slip` which is a lisp dialect. 
+
+VERSION FRANÇAISE : VOIR SLIP.PDF POUR L'ÉNONCÉ DU TRAVAIL.
