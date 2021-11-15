@@ -3,4 +3,4 @@
 作业任务的描述请见slip.pdf。
 
 
-this is my course **ift2035 concepts of programming languages** project1 at university of montreal. Content : write in haskell a interpreter for a language `slip` which is a lisp dialect. 
+This is my course **ift2035 concepts of programming languages** project1 at university of montreal. Content : write in haskell a interpreter for a language `slip` which is a lisp dialect. 
