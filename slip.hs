@@ -1,11 +1,10 @@
 -- TP-1  --- Implantation d'une sorte de Lisp          -*- coding: utf-8 -*-
 {-# OPTIONS_GHC -Wall #-}
-{--auteur : Stefan Monnier
+{--auteur : Stefan Monnier (le professeur)
  - date : 3/11/2021
 --------------------------------------------------------------------------
 --------------------------------------------------------------------------
--- contributeur : Yuchen Hui,                                        ----- 
---                Yuyang Xiong                                    -} -----
+-- contributeur : Yuchen Hui                                        ----- 
 --------------------------------------------------------------------------
 --------------------------------------------------------------------------
 -- Ce fichier défini les fonctionalités suivantes:

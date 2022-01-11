@@ -107,7 +107,7 @@ $$ -->
 
    ```
 #### Last but not least
-For more details about the project, you may refer to [slip.pdf](slip.pdf)(in French)
+For more details about the project, you may refer to [slip.pdf](slip.pdf) (in French)
 
 ## VERSION FRANÇAISE  
 VOIR SLIP.PDF POUR L'ÉNONCÉ DU TRAVAIL.
