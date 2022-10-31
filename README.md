@@ -29,7 +29,7 @@ $$ -->
    which is the result of interpreting file `tests.slip` containing several expressions in "slip". Here is an overview of  `test.slip`:
    <br>
    ```
-   ;;; Yuchen Hui Yuyang Xiong. 
+   ;;; Yuchen Hui . 
     (case (cons myCons 1 
                     (slet ((x 9) 
                             ((fn x y) (x (y /)))) 
