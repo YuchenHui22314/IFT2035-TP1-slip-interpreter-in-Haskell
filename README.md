@@ -2,7 +2,7 @@
 
 ## Description
 #### Introduction
-- This is my course project1 for [**ift2035 concepts of programming languages**](https://www.iro.umontreal.ca/~monnier/2035/) at university of montreal. 
+- This is my course project1 for [**ift2035 concepts of programming languages**](https://www.iro.umontreal.ca/~monnier/2035/) at the University of Montreal. 
 - Task: Write in haskell a part of an interpreter for a language `slip` which is a lisp dialect. 
 
 #### Grammer of the language slip
